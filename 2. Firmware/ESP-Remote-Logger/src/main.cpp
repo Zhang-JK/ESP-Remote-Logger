@@ -1,9 +1,23 @@
 #include <Arduino.h>
+#include <network.h>
+#include <password.h>
+
+Network wifi;
+WiFiServer server;
 
 void setup() {
-  // put your setup code here, to run once:
+  // start debug serial port
+  Serial.begin(115200);
+
+  // start network
+  wifi.init(SSID, USER_NAME, PASSWORD);
+  server.begin(23333);
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // find available clients
+  WiFiClient client = server.available();
+  if(client.connected())
+    client.println("Data Test");
 }
