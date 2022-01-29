@@ -6,8 +6,9 @@
 - [x] Wi-Fi
 - [x] CAN Bus
 - [ ] UART Debugger
-- [ ] SPI Screen
-- [ ] SD Card
+- [x] SPI Screen
+- [ ] Screen Backlight
+- [x] SD Card
 - [ ] Buzzer
 
 ### Application
