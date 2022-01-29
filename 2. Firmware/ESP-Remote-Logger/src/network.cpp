@@ -1,6 +1,6 @@
 #include <network.h>
 
-void Network::init(String ssid, String password)
+String Network::init(String ssid, String password)
 {
 	Serial.print("Connecting: ");
 	Serial.println(ssid.c_str());
@@ -18,9 +18,11 @@ void Network::init(String ssid, String password)
 	Serial.println("WiFi connected");
 	Serial.println("IP address: ");
 	Serial.println(WiFi.localIP());
+
+	return WiFi.localIP().toString();
 }
 
-void Network::init(String ssid, String identity, String password)
+String Network::init(String ssid, String identity, String password)
 {
 	Serial.print("Connecting: ");
 	Serial.print(ssid.c_str());
@@ -47,4 +49,6 @@ void Network::init(String ssid, String identity, String password)
 	Serial.println("WiFi connected");
 	Serial.println("IP address: ");
 	Serial.println(WiFi.localIP());
+	
+	return WiFi.localIP().toString();;
 }

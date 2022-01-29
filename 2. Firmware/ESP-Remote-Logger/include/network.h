@@ -10,8 +10,8 @@ class Network
 private:
 	 
 public:
-	void init(String ssid, String password);
-	void init(String ssid, String identity, String password);
+	String init(String ssid, String password);
+	String init(String ssid, String identity, String password);
 };
 
 #endif
