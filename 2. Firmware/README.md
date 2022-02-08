@@ -5,15 +5,18 @@
 ### Driver
 - [x] Wi-Fi
 - [x] CAN Bus
-- [ ] UART Debugger
+- [x] UART Debugger
 - [x] SPI Screen
 - [ ] Screen Backlight
 - [x] SD Card
 - [ ] Buzzer
 
 ### Application
-- [ ] Define protocol
-- [ ] Send CAN Bus data
-- [ ] Send UART data
-- [ ] Screen Settings
-- [ ] SD Card log
+- [x] Define protocol
+- [x] Register data message
+- [x] Send register data message
+- [ ] Decode data message
+- [ ] Send data message
+- [ ] Text data
+- [ ] Response data
+- [ ] Log level
