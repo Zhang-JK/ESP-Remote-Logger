@@ -108,9 +108,14 @@ void setup()
   ss << (char)UINT16 << "-" << "RPM" << ",";
   ss << (char)UINT16 << "-" << "Torque" << ",";
   ss << (char)UINT8  << "-" << "Temp";
-  Serial.println(ss.str().c_str());
-  tx.registerMsg(0x01, 0x04, 0x07, "Motor 1", ss.str().c_str());
-  infoSerial.print(tx.getMessageByID((uint8_t)0x01)->generateRegisterMsg().c_str());
+  // Serial.println(ss.str().c_str());
+  char name[10];
+  for (int i=0; i<7; i++)
+  {
+    sprintf(name, "Motor 0x20%d", i);
+    tx.registerMsg(i+1, 0x04, 0x07, name, ss.str().c_str());
+    infoSerial.print(tx.getMessageByID(i+1)->generateRegisterMsg().c_str());
+  }
 }
 
 void screenUpdate()
@@ -151,10 +156,9 @@ void loop()
   // read uart data
   usartReceive(infoSerial);
 
-  if(rx.getMessageByID(0x01) != nullptr)
-  {
-    Serial.print(rx.getMessageByID(0x01)->generateRegisterMsg().c_str());
-    infoSerial.print(rx.getMessageByID(0x01)->generateRegisterMsg().c_str());
-    delay(100000);
-  }
+  // if(rx.getMessageByID(0x01) != nullptr)
+  // {
+  //   Serial.print(rx.getMessageByID(0x01)->generateRegisterMsg().c_str());
+  //   delay(100000);
+  // }
 }

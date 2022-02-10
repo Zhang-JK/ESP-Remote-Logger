@@ -22,8 +22,9 @@ struct DataDictionary
 {
     string key;
     DataType type;
-    void *value;
+    void * const value;
 
+    DataDictionary(string key, DataType type, void * const value) : key(key), type(type), value(value) {}
     ~DataDictionary();
 };
 
@@ -35,7 +36,7 @@ public:
     uint8_t size;
     string name;
     string *fieldName;
-    DataDictionary *data;
+    list<DataDictionary *> data;
 
     DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, string field);
     ~DataMessage();

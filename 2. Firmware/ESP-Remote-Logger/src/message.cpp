@@ -21,28 +21,31 @@ DataMessage::DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, 
     this->number = number;
     this->size = size;
     this->name = name;
-    this->data = new DataDictionary[number];
     this->buffer = new uint8_t[size];
     char *token = strtok(&field[0], ",");
+    void *tempPtr = this->buffer;
     for (int i = 0; i < number; i++)
     {
-        this->data[i].key = string(token).substr(2, string(token).length() - 2);
-        this->data[i].type = (DataType)token[0];
-        switch (this->data[i].type)
+        string key = string(token).substr(2, string(token).length() - 2);
+        DataType type = (DataType)token[0];
+        void* value = tempPtr;
+        DataDictionary *temp = new DataDictionary(key, type, value);
+        switch (type)
         {
         case UINT8:
-            this->data[i].value = new uint8_t;
+            tempPtr = (uint8_t *)tempPtr + 1;
             break;
         case UINT16:
-            this->data[i].value = new uint16_t;
+            tempPtr = (uint16_t *)tempPtr + 1;
             break;
         case UINT32:
-            this->data[i].value = new uint32_t;
+            tempPtr = (uint32_t *)tempPtr + 1;
             break;
         case FLOAT:
-            this->data[i].value = new float;
+            tempPtr = (float *)tempPtr + 1;
             break;
         }
+        this->data.push_back(temp);
 
         token = strtok(NULL, ",");
     }
@@ -50,7 +53,8 @@ DataMessage::DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, 
 
 DataMessage::~DataMessage()
 {
-    delete[] data;
+    for (DataDictionary *d : data)
+        delete d;
     delete[] buffer;
     delete[] fieldName;
 }
@@ -73,8 +77,8 @@ string DataMessage::generateRegisterMsg() {
     string result = "";
     result = result + (char)REGISTER_HEADER + (char)id + (char)number + (char)size + name + "\;";
 
-    for(int i=0; i<number; i++)
-        result = result + (char)data[i].type + "-" + data[i].key + ",";
+    for(DataDictionary *d : data)
+        result = result + (char)(d->type) + "-" + d->key + ",";
 
     result = result + (char)STOP_BYTE;
     return result;
