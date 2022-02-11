@@ -13,6 +13,12 @@ using namespace std;
 Network wifi;
 String ip;
 WiFiServer server;
+string tcpBuffer;
+ClientHandler clientHandler;
+bool tcpConnected = false;
+WiFiClient client;
+uint32_t lastTransmitTick = 0;
+
 CAN can;
 int canMessageCount = 0;
 TFT_eSPI tft = TFT_eSPI();
@@ -75,7 +81,7 @@ void setup()
     ip = wifi.init(ssid, password);
   else
     ip = wifi.init(ssid, username, password);
-  server.begin(23333);
+  server.begin(TCP_SERVER_PORT);
 
   // init CAN receive
   can.init(CAN_SPEED_1000KBPS, GPIO_NUM_32, GPIO_NUM_33);
@@ -105,13 +111,20 @@ void setup()
 
   // register messages
   stringstream ss;
-  ss << (char)UINT16 << "-" << "Encoder" << ",";
-  ss << (char)UINT16 << "-" << "RPM" << ",";
-  ss << (char)UINT16 << "-" << "Torque" << ",";
-  ss << (char)UINT8  << "-" << "Temp";
+  ss << (char)UINT16 << "-"
+     << "Encoder"
+     << ",";
+  ss << (char)UINT16 << "-"
+     << "RPM"
+     << ",";
+  ss << (char)UINT16 << "-"
+     << "Torque"
+     << ",";
+  ss << (char)UINT8 << "-"
+     << "Temp";
   // Serial.println(ss.str().c_str());
   char name[10];
-  for (int i=1; i<=8; i++)
+  for (int i = 1; i <= 8; i++)
   {
     sprintf(name, "Motor 0x20%d", i);
     tx.registerMsg(i, 0x04, 0x07, name, ss.str().c_str());
@@ -136,16 +149,35 @@ void screenUpdate()
 
 void loop()
 {
-  // find available clients
-  WiFiClient client = server.available();
-  if (client.connected())
-    client.println("Data Test");
+  // TCP Receive form client non-blocking
+  if (tcpConnected)
+  {
+    while (client.available())
+    {
+      char c = client.read();
+      if (c == '\n')
+      {
+        // Serial.printf("Received from TCP: %s\n", tcpBuffer.c_str());
+        clientHandler.parseTCP(client.remoteIP(), tcpBuffer);
+        tcpBuffer = "";
+        break;
+      }
+      else
+        tcpBuffer += c;
+    }
+    tcpConnected = client.connected();
+  } 
+  else
+  {
+    client = server.available();
+    tcpConnected = client.connected();
+  }
 
   // read motor data
   if (can.receive(1))
   {
     int canId = can.getRxID();
-    if(canId >= 0x201 && canId <= 0x208)
+    if (canId >= 0x201 && canId <= 0x208)
     {
       canMessageCount++;
       uint8_t data[7];
@@ -157,10 +189,10 @@ void loop()
       data[4] = can.getRxData()[5];
       data[5] = can.getRxData()[4];
       data[6] = can.getRxData()[6];
-      tx.txLoadMessage(canId-0x200, data);
+      tx.txLoadMessage(canId - 0x200, data);
     }
     // Serial.printf("%s is running at %d RPM \n", (tx.getMessageByID(canId-0x200)->name).c_str(), *(int16_t *)(tx.getMessageByID(canId-0x200)->getData("RPM")->value));
-    tx.txTransmit((uint8_t)(canId-0x200), infoSerial);
+    tx.txTransmit((uint8_t)(canId - 0x200), infoSerial);
   }
 
   // send motor data
@@ -171,4 +203,12 @@ void loop()
 
   // read uart data
   usartReceive(infoSerial);
+
+  // send UDP test data
+  char data[] = "Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP ";
+  if(millis() - lastTransmitTick > 2)
+  {
+    clientHandler.sendAllUDP((uint8_t *)data, 200);
+    lastTransmitTick = millis();
+  }
 }
