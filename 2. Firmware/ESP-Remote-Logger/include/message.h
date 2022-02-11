@@ -11,6 +11,17 @@ using namespace std;
 #define RESPONSE_HEADER 0xA3
 #define STOP_BYTE 0xAF
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
+
 enum DataType {
     UINT8 = 0x01,
     UINT16,
@@ -35,20 +46,21 @@ public:
     uint8_t number;
     uint8_t size;
     string name;
-    string *fieldName;
-    list<DataDictionary *> data;
 
     DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, string field);
     ~DataMessage();
-    void decode(uint8_t *data);
-    DataDictionary *getData();
+    
+    void setBuffer(uint8_t *data);
+    void transmitMsg(HardwareSerial& serial);
+
     DataDictionary *getData(string key);
     DataDictionary *operator[](string key);
 
     string generateRegisterMsg();
-    void transmitMsg();
 
 private:
+    // buffer is little endian!
+    list<DataDictionary *> data;
     uint8_t *buffer;
 };
 
@@ -63,7 +75,8 @@ public:
     void registerMsg(string regData);
     void registerMsg(uint8_t id, uint8_t number, uint8_t size, string name, string field);
     bool rxUpdate(uint8_t id, string data);
-    bool txTransmit(uint8_t id);
+    bool txLoadMessage(uint8_t id, uint8_t *buffer);
+    bool txTransmit(uint8_t id, HardwareSerial& serial);
 };
 
 void usartReceive(HardwareSerial& serial);

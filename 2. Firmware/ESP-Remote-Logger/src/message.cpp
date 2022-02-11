@@ -28,7 +28,7 @@ DataMessage::DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, 
     {
         string key = string(token).substr(2, string(token).length() - 2);
         DataType type = (DataType)token[0];
-        void* value = tempPtr;
+        void *value = tempPtr;
         DataDictionary *temp = new DataDictionary(key, type, value);
         switch (type)
         {
@@ -49,6 +49,7 @@ DataMessage::DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, 
 
         token = strtok(NULL, ",");
     }
+    // Serial.printf("Registered message id %02x named \"%s\"", this->id, this->name.c_str());
 }
 
 DataMessage::~DataMessage()
@@ -56,28 +57,46 @@ DataMessage::~DataMessage()
     for (DataDictionary *d : data)
         delete d;
     delete[] buffer;
-    delete[] fieldName;
 }
 
-void DataMessage::decode(uint8_t *data)
+void DataMessage::setBuffer(uint8_t *data)
 {
+    memcpy(buffer, data, size);
 }
 
-DataDictionary *DataMessage::getData()
+void DataMessage::transmitMsg(HardwareSerial& serial)
 {
-    return nullptr;
+    string header = "";
+    header = header + (char)DATA_HEADER + (char)id + (char)size;
+    serial.print(header.c_str());
+
+    for (int i = 0; i < size; i++)
+        serial.printf("%c", (char)buffer[i]);
+
+    serial.printf("%c", (char)STOP_BYTE);
 }
 
 DataDictionary *DataMessage::getData(string key)
 {
+    for (DataDictionary *d : data)
+    {
+        if (d->key == key)
+            return d;
+    }
     return nullptr;
 }
 
-string DataMessage::generateRegisterMsg() {
+DataDictionary *DataMessage::operator[](string key)
+{
+    return getData(key);
+}
+
+string DataMessage::generateRegisterMsg()
+{
     string result = "";
     result = result + (char)REGISTER_HEADER + (char)id + (char)number + (char)size + name + "\;";
 
-    for(DataDictionary *d : data)
+    for (DataDictionary *d : data)
         result = result + (char)(d->type) + "-" + d->key + ",";
 
     result = result + (char)STOP_BYTE;
@@ -94,7 +113,7 @@ DataMessage *DataMessageHandler::getMessageByID(uint8_t id)
     return nullptr;
 }
 
-void DataMessageHandler::registerMsg(string regData) 
+void DataMessageHandler::registerMsg(string regData)
 {
     uint8_t id = regData[0];
     uint8_t number = regData[1];
@@ -108,9 +127,10 @@ void DataMessageHandler::registerMsg(string regData)
 void DataMessageHandler::registerMsg(uint8_t id, uint8_t number, uint8_t size, string name, string field)
 {
     for (list<DataMessage *>::iterator it = messages.begin(); it != messages.end(); it++)
-        if ((*it)->id == id) {
+        if ((*it)->id == id)
+        {
             Serial.println("Message already registered");
-            return ;
+            return;
         }
 
     messages.push_back(new DataMessage(id, number, size, name, field));
@@ -118,9 +138,28 @@ void DataMessageHandler::registerMsg(uint8_t id, uint8_t number, uint8_t size, s
     Serial.printf("Registered message id %02x named \"%s\" with %d fields: %s \n", id, name.c_str(), number, field.c_str());
 }
 
-void usartRxProcess(uint8_t header, string& data) {
+bool DataMessageHandler::txLoadMessage(uint8_t id, uint8_t *buffer)
+{
+    DataMessage *msg = getMessageByID(id);
+    if (msg == nullptr)
+        return false;
+    msg->setBuffer(buffer);
+    return true;
+}
+
+bool DataMessageHandler::txTransmit(uint8_t id, HardwareSerial &serial)
+{
+    DataMessage *msg = tx.getMessageByID(id);
+    if (msg == nullptr)
+        return false;
+    msg->transmitMsg(serial);
+    return true;
+}
+
+void usartRxProcess(uint8_t header, string &data)
+{
     Serial.printf("Received Header %02X, message: %s \n", header, data.c_str());
-    
+
     switch (header)
     {
     case TEXT_HEADER:
@@ -132,29 +171,38 @@ void usartRxProcess(uint8_t header, string& data) {
         break;
     case RESPONSE_HEADER:
         break;
-    
+
     default:
-        return ;
+        return;
     }
 }
 
 bool isReceiving = false;
 uint8_t usartHeader = 0;
 string usartData = "";
-void usartReceive(HardwareSerial& serial) {
-    while(serial.available()) {
+void usartReceive(HardwareSerial &serial)
+{
+    while (serial.available())
+    {
         uint8_t d = serial.read();
-        if (isReceiving) {
-            if (d == STOP_BYTE) {
+        if (isReceiving)
+        {
+            if (d == STOP_BYTE)
+            {
                 usartRxProcess(usartHeader, usartData);
                 isReceiving = false;
-                usartHeader = 0; usartData = "";
-            } 
-            else {
+                usartHeader = 0;
+                usartData = "";
+            }
+            else
+            {
                 usartData += (char)d;
             }
-        } else {
-            if (d == TEXT_HEADER || d == DATA_HEADER || d == REGISTER_HEADER || d == RESPONSE_HEADER) {
+        }
+        else
+        {
+            if (d == TEXT_HEADER || d == DATA_HEADER || d == REGISTER_HEADER || d == RESPONSE_HEADER)
+            {
                 usartHeader = d;
                 isReceiving = true;
                 Serial.printf("Receiving Header %02X \n", d);
@@ -162,4 +210,3 @@ void usartReceive(HardwareSerial& serial) {
         }
     }
 }
-

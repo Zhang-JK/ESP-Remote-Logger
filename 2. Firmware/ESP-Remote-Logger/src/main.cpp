@@ -14,6 +14,7 @@ Network wifi;
 String ip;
 WiFiServer server;
 CAN can;
+int canMessageCount = 0;
 TFT_eSPI tft = TFT_eSPI();
 SdCard card;
 SdCard tf;
@@ -99,7 +100,7 @@ void setup()
   // start timer
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, screenUpdate, true);
-  timerAlarmWrite(timer, 100000, true);
+  timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);
 
   // register messages
@@ -110,11 +111,11 @@ void setup()
   ss << (char)UINT8  << "-" << "Temp";
   // Serial.println(ss.str().c_str());
   char name[10];
-  for (int i=0; i<7; i++)
+  for (int i=1; i<=8; i++)
   {
     sprintf(name, "Motor 0x20%d", i);
-    tx.registerMsg(i+1, 0x04, 0x07, name, ss.str().c_str());
-    infoSerial.print(tx.getMessageByID(i+1)->generateRegisterMsg().c_str());
+    tx.registerMsg(i, 0x04, 0x07, name, ss.str().c_str());
+    infoSerial.print(tx.getMessageByID(i)->generateRegisterMsg().c_str());
   }
 }
 
@@ -122,10 +123,15 @@ void screenUpdate()
 {
   // update display
   tft.fillScreen(TFT_BLACK);
+  tft.setCursor(5, 5);
+  tft.printf("CAN Rate: %d", canMessageCount);
   tft.setCursor(5, 112);
   tft.println("-ESP Logger-      JK 2022");
   tft.setCursor(5, 120);
   tft.println("-IP:" + ip + "-");
+
+  // update can Rate
+  canMessageCount = 0;
 }
 
 void loop()
@@ -138,27 +144,31 @@ void loop()
   // read motor data
   if (can.receive(1))
   {
-    Serial.printf("Received from 0x%08X: ", can.getRxID());
-    for (int i = 0; i < CAN_MESSAGE_LENGTH; i++)
+    int canId = can.getRxID();
+    if(canId >= 0x201 && canId <= 0x208)
     {
-      Serial.print(can.getRxData()[i]);
-      Serial.print(" ");
+      canMessageCount++;
+      uint8_t data[7];
+      // big endian to little endian
+      data[0] = can.getRxData()[1];
+      data[1] = can.getRxData()[0];
+      data[2] = can.getRxData()[3];
+      data[3] = can.getRxData()[2];
+      data[4] = can.getRxData()[5];
+      data[5] = can.getRxData()[4];
+      data[6] = can.getRxData()[6];
+      tx.txLoadMessage(canId-0x200, data);
     }
-    Serial.println("");
+    // Serial.printf("%s is running at %d RPM \n", (tx.getMessageByID(canId-0x200)->name).c_str(), *(int16_t *)(tx.getMessageByID(canId-0x200)->getData("RPM")->value));
+    tx.txTransmit((uint8_t)(canId-0x200), infoSerial);
   }
 
   // send motor data
-  // uint8_t dataCAN[CAN_MESSAGE_LENGTH] = {0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00};
+  // uint8_t dataCAN[CAN_MESSAGE_LENGTH] = {0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00};
   // can.setTxData(dataCAN);
   // can.setTxID(0x200);
   // can.transmit();
 
   // read uart data
   usartReceive(infoSerial);
-
-  // if(rx.getMessageByID(0x01) != nullptr)
-  // {
-  //   Serial.print(rx.getMessageByID(0x01)->generateRegisterMsg().c_str());
-  //   delay(100000);
-  // }
 }
