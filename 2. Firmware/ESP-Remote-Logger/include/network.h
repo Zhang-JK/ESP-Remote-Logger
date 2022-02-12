@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <iostream>
 #include <list>
+// #include <message.h>
 using namespace std;
  
 class Network
@@ -56,7 +57,7 @@ class ClientHandler
 	void addClient(string ip, uint16_t port, string name, uint16_t selfPort);
 
 	void sendAllUDP(uint8_t *message, int length);
-	bool parseTCP(IPAddress ip, string message);
+	bool parseTCP(WiFiClient& client, string message);
 };
 
 #endif

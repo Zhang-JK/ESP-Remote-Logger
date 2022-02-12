@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <network.h>
+#include <message.h>
 #include <password.h>
 #include <can.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <sd_card.h>
-#include <message.h>
 
 #include <sstream>
 using namespace std;
@@ -18,15 +18,18 @@ ClientHandler clientHandler;
 bool tcpConnected = false;
 WiFiClient client;
 uint32_t lastTransmitTick = 0;
+char wifiFile[] = "/wifi.txt";
 
 CAN can;
 int canMessageCount = 0;
+
 TFT_eSPI tft = TFT_eSPI();
+
 SdCard card;
 SdCard tf;
+
 HardwareSerial infoSerial(1);
 hw_timer_t *timer = nullptr;
-char wifiFile[] = "/wifi.txt";
 
 void screenUpdate();
 
@@ -158,8 +161,10 @@ void loop()
       if (c == '\n')
       {
         // Serial.printf("Received from TCP: %s\n", tcpBuffer.c_str());
-        clientHandler.parseTCP(client.remoteIP(), tcpBuffer);
+        clientHandler.parseTCP(client, tcpBuffer);
         tcpBuffer = "";
+        // client.stop();
+        // tcpConnected = false;
         break;
       }
       else
@@ -204,11 +209,10 @@ void loop()
   // read uart data
   usartReceive(infoSerial);
 
-  // send UDP test data
-  char data[] = "Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP Hello UDP ";
+  // send UDP test data, about 300Hz
   if(millis() - lastTransmitTick > 2)
   {
-    clientHandler.sendAllUDP((uint8_t *)data, 200);
+    tx.txTransmitViaNet(clientHandler);
     lastTransmitTick = millis();
   }
 }

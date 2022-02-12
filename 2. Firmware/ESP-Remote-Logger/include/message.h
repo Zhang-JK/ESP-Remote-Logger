@@ -1,6 +1,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
+
 #include <Arduino.h>
+#include <network.h>
 #include <iostream>
 #include <list>
 using namespace std;
@@ -46,11 +48,13 @@ public:
     uint8_t number;
     uint8_t size;
     string name;
+    bool updated = false;
 
     DataMessage(uint8_t id, uint8_t number, uint8_t size, string name, string field);
     ~DataMessage();
     
     void setBuffer(uint8_t *data);
+    const uint8_t *getBuffer();
     void transmitMsg(HardwareSerial& serial);
 
     DataDictionary *getData(string key);
@@ -69,7 +73,10 @@ class DataMessageHandler
 public:
     int numberOfMessages = 0;
     list<DataMessage *> messages;
+    uint8_t netBuffer[200];
+    int netBufferLength = 0;
 
+    const list<DataMessage *>& getMessageList() { return messages; }
     DataMessage *getMessageByID(uint8_t id);
     DataMessage *setMessageByID(uint8_t id, string field);
     void registerMsg(string regData);
@@ -77,6 +84,7 @@ public:
     bool rxUpdate(uint8_t id, string data);
     bool txLoadMessage(uint8_t id, uint8_t *buffer);
     bool txTransmit(uint8_t id, HardwareSerial& serial);
+    void txTransmitViaNet(ClientHandler& net);
 };
 
 void usartReceive(HardwareSerial& serial);

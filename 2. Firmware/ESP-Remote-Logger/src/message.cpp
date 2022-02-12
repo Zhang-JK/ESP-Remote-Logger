@@ -62,6 +62,12 @@ DataMessage::~DataMessage()
 void DataMessage::setBuffer(uint8_t *data)
 {
     memcpy(buffer, data, size);
+    updated = true;
+}
+
+const uint8_t *DataMessage::getBuffer()
+{
+    return buffer;
 }
 
 void DataMessage::transmitMsg(HardwareSerial& serial)
@@ -175,6 +181,27 @@ void usartRxProcess(uint8_t header, string &data)
     default:
         return;
     }
+}
+
+void DataMessageHandler::txTransmitViaNet(ClientHandler& net) 
+{
+    for (auto msg : messages)
+    {
+        if(!msg->updated) continue;
+        netBuffer[netBufferLength++] = DATA_HEADER;
+        netBuffer[netBufferLength++] = msg->id;
+        netBuffer[netBufferLength++] = msg->size;
+        for (int i = 0; i < msg->size; i++)
+            netBuffer[netBufferLength++] = msg->getBuffer()[i];
+        netBuffer[netBufferLength++] = STOP_BYTE;
+        msg->updated = false;
+    }
+    netBuffer[netBufferLength++] = '\n';
+    // for (int i=0; i<netBufferLength; i++)
+    //     Serial.printf("%c", netBuffer[i]);
+
+    net.sendAllUDP(netBuffer, netBufferLength);
+    netBufferLength = 0;
 }
 
 bool isReceiving = false;

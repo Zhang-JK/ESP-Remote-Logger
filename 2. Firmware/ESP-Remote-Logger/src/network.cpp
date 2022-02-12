@@ -1,4 +1,5 @@
 #include <network.h>
+#include <message.h>
 
 String Network::init(String ssid, String password)
 {
@@ -56,7 +57,7 @@ String Network::init(String ssid, String identity, String password)
 UDPClient::UDPClient(string ip, uint16_t port, string name, uint16_t selfPort) : ip(ip), port(port), name(name), selfPort(selfPort), lastBeatTick(millis())
 {
 	udp.begin(selfPort);
-	Serial.printf("Established UDP connection on port %d to %s with IP: %s:%d", selfPort, name.c_str(), ip.c_str(), port);
+	Serial.printf("Established UDP connection on port %d to %s with IP: %s:%d\n", selfPort, name.c_str(), ip.c_str(), port);
 }
 
 bool UDPClient::isConnected()
@@ -80,7 +81,7 @@ bool UDPClient::sendUDP(uint8_t *message, int length)
 void UDPClient::heartbeat()
 {
 	lastBeatTick = millis();
-	Serial.printf("Heartbeat from %s", name.c_str());
+	Serial.printf("Heartbeat from %s\n", name.c_str());
 }
 
 ClientHandler::~ClientHandler()
@@ -127,7 +128,7 @@ void ClientHandler::sendAllUDP(uint8_t *message, int length)
 		client->sendUDP(message, length);
 }
 
-bool ClientHandler::parseTCP(IPAddress ip, string message)
+bool ClientHandler::parseTCP(WiFiClient& client, string message)
 {
 	int ind = message.find_first_of(":");
 	if(ind == -1)
@@ -135,16 +136,24 @@ bool ClientHandler::parseTCP(IPAddress ip, string message)
 	switch (message[0])
 	{
 	case 'N':
-		if(getClient(ip.toString().c_str(), UDP_PORT) != nullptr)
+		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) != nullptr)
 			return false;
-		if(getClient(message.substr(ind, message.length()-ind-1)) != nullptr)
+		if(getClient(message.substr(ind+1, message.length()-ind-1)) != nullptr)
 			return false;
-		addClient(ip.toString().c_str(), UDP_PORT, message.substr(ind, message.length()-ind-1), udpPort++);
+		for(auto msgHead : tx.getMessageList())
+			client.write(msgHead->generateRegisterMsg().c_str());
+		addClient(client.remoteIP().toString().c_str(), UDP_PORT, message.substr(ind+1, message.length()-ind-1), udpPort++);
 		break;
 	case 'H':
-		if(getClient(ip.toString().c_str(), UDP_PORT) == nullptr)
+		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
 			return false;
-		getClient(ip.toString().c_str(), UDP_PORT)->heartbeat();
+		getClient(client.remoteIP().toString().c_str(), UDP_PORT)->heartbeat();
+		break;
+	case 'R':
+		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
+			return false;
+		for(auto msgHead : tx.getMessageList())
+			client.write(msgHead->generateRegisterMsg().c_str());
 		break;
 
 	default:
