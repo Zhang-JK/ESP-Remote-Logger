@@ -1,18 +1,20 @@
-//
-// Created by lao_jk on 2022/2/12.
-//
+/**
+ * Connection
+ * Connect to a server
+ */
 
 #ifndef LOGGERCLIENT_CONNECTION_H
 #define LOGGERCLIENT_CONNECTION_H
 
-#include <QMainWindow>
+#include <QWidget>
+#include <QDebug>
 
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Connection; }
 QT_END_NAMESPACE
 
-class Connection : public QMainWindow {
+class Connection : public QWidget {
 Q_OBJECT
 
 public:
@@ -22,6 +24,9 @@ public:
 
 private:
     Ui::Connection *ui;
+
+private slots:
+    void connectToServer();
 };
 
 
