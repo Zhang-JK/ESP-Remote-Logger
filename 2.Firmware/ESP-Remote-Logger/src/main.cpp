@@ -100,7 +100,7 @@ void setup()
   tft.println(F("-Connected!-"));
   tft.setCursor(15, 80);
   tft.println(ip);
-  delay(5000);
+  delay(1000);
 
   // reset display
   tft.setTextSize(1);
@@ -163,8 +163,8 @@ void loop()
         // Serial.printf("Received from TCP: %s\n", tcpBuffer.c_str());
         clientHandler.parseTCP(client, tcpBuffer);
         tcpBuffer = "";
-        // client.stop();
-        // tcpConnected = false;
+        client.stop();
+        tcpConnected = false;
         break;
       }
       else
@@ -210,7 +210,7 @@ void loop()
   usartReceive(infoSerial);
 
   // send UDP test data, about 300Hz
-  if(millis() - lastTransmitTick > 2)
+  if(millis() - lastTransmitTick > 1)
   {
     tx.txTransmitViaNet(clientHandler);
     lastTransmitTick = millis();

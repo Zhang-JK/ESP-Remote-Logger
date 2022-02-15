@@ -62,7 +62,6 @@ UDPClient::UDPClient(string ip, uint16_t port, string name, uint16_t selfPort) :
 
 bool UDPClient::isConnected()
 {
-	return true;
 	return millis() - lastBeatTick < 3000;
 }
 
@@ -136,12 +135,12 @@ bool ClientHandler::parseTCP(WiFiClient& client, string message)
 	switch (message[0])
 	{
 	case 'N':
+		for(auto msgHead : tx.getMessageList())
+			client.write(msgHead->generateRegisterMsg().c_str());
 		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) != nullptr)
 			return false;
 		if(getClient(message.substr(ind+1, message.length()-ind-1)) != nullptr)
 			return false;
-		for(auto msgHead : tx.getMessageList())
-			client.write(msgHead->generateRegisterMsg().c_str());
 		addClient(client.remoteIP().toString().c_str(), UDP_PORT, message.substr(ind+1, message.length()-ind-1), udpPort++);
 		break;
 	case 'H':
