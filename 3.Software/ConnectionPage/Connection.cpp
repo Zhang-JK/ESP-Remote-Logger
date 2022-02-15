@@ -29,19 +29,42 @@ void Connection::connectToServer() {
     if(!ipVal.exactMatch(ui->ip->text()))
     {
         QMessageBox::critical(this, tr("Syntax Error"), tr("IP Address is not valid"));
+        ui->connect->setEnabled(true); ui->connect->setText("Connect");
+        ui->cancel->setEnabled(true);
         return ;
     }
     if(!ui->port->text().contains(QRegExp("^\\d+$")) || (ui->port->text().toInt() < 0 || ui->port->text().toInt() > 65535))
     {
         QMessageBox::critical(this, tr("Syntax Error"), tr("Port is not valid"));
+        ui->connect->setEnabled(true); ui->connect->setText("Connect");
+        ui->cancel->setEnabled(true);
         return ;
     }
 
     dataHandler.init(ui->ip->text(), ui->port->text().toInt(), 23333, USER_TCP_PORT, USER_UDP_PORT);
-    dataHandler.connectToServer("test");
+    int state = dataHandler.connectToServer("test");
+    QString msg = "Connection failed";
 
-    ui->connect->setText("Connected");
-    QMessageBox::information(this, tr("Connected"), tr("Connected to server"), QMessageBox::Yes);
-    this->close();
+    switch (state) {
+        case 0:
+            ui->connect->setText("Connected");
+            QMessageBox::information(this, tr("Connected"), tr("Connected to server"), QMessageBox::Yes);
+            this->close();
+            emit showDashboard();
+            return;
+
+        case -1:
+            msg = "Message Sent failed";
+            break;
+        case -2:
+            msg = "Connection timeout";
+            break;
+        case -3:
+            msg = "Not initialized";
+            break;
+    }
+    QMessageBox::warning(this, tr("Connection FAILED"), msg, QMessageBox::Yes);
+    ui->connect->setEnabled(true); ui->connect->setText("Connect");
+    ui->cancel->setEnabled(true);
 }
 

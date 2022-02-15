@@ -27,6 +27,9 @@ public:
 private:
     Ui::Connection *ui;
 
+signals:
+    void showDashboard();
+
 private slots:
     void connectToServer();
 };

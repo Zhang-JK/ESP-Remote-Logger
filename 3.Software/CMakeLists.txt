@@ -14,7 +14,7 @@ find_package(Qt5 COMPONENTS
         Network
         REQUIRED)
 
-add_executable(LoggerClient main.cpp asset/resource.qrc ConnectionPage/Connection.cpp ConnectionPage/Connection.h ConnectionPage/Connection.ui NetDataHandler/DataHandler.cpp NetDataHandler/DataHandler.h Config.h)
+add_executable(LoggerClient main.cpp asset/resource.qrc ConnectionPage/Connection.cpp ConnectionPage/Connection.h ConnectionPage/Connection.ui NetDataHandler/DataHandler.cpp NetDataHandler/DataHandler.h Config.h DataPage/Dashboard.cpp DataPage/Dashboard.h DataPage/Dashboard.ui)
 target_link_libraries(LoggerClient
         Qt5::Core
         Qt5::Gui
