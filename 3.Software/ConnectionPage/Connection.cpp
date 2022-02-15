@@ -23,6 +23,8 @@ Connection::~Connection() {
 
 void Connection::connectToServer() {
     qDebug() << "Connecting to server";
+    ui->connect->setEnabled(false); ui->connect->setText("Connecting");
+    ui->cancel->setEnabled(false);
     QRegExp ipVal("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
     if(!ipVal.exactMatch(ui->ip->text()))
     {
@@ -34,5 +36,12 @@ void Connection::connectToServer() {
         QMessageBox::critical(this, tr("Syntax Error"), tr("Port is not valid"));
         return ;
     }
+
+    dataHandler.init(ui->ip->text(), ui->port->text().toInt(), 23333, USER_TCP_PORT, USER_UDP_PORT);
+    dataHandler.connectToServer("test");
+
+    ui->connect->setText("Connected");
+    QMessageBox::information(this, tr("Connected"), tr("Connected to server"), QMessageBox::Yes);
+    this->close();
 }
 

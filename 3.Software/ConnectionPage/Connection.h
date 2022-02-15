@@ -8,6 +8,8 @@
 
 #include <QWidget>
 #include <QDebug>
+#include "../NetDataHandler/DataHandler.h"
+#include "../Config.h"
 
 
 QT_BEGIN_NAMESPACE
