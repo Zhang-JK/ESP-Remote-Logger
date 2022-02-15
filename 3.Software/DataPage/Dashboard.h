@@ -7,6 +7,7 @@
 #define LOGGERCLIENT_DASHBOARD_H
 
 #include <QWidget>
+#include <QStandardItemModel>
 
 
 QT_BEGIN_NAMESPACE
@@ -21,8 +22,14 @@ public:
 
     ~Dashboard() override;
 
+private slots:
+    void fullScreen();
+    void udpDecode(const QList<int>& data);
+    void receiveRate(int updated);
+
 private:
     Ui::Dashboard *ui;
+    QStandardItemModel *model;
 };
 
 

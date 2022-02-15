@@ -42,7 +42,7 @@
            <item>
             <widget class="QLCDNumber" name="refresh">
              <property name="intValue" stdset="0">
-              <number>100</number>
+              <number>0</number>
              </property>
             </widget>
            </item>
@@ -139,21 +139,21 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="setting">
            <property name="text">
             <string>Settings</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="itemManager">
            <property name="text">
             <string>Item Manager</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="fullScreen">
            <property name="text">
             <string>Full Screen</string>
            </property>

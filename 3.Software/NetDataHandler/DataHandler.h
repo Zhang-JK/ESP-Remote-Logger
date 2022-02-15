@@ -14,6 +14,7 @@
 #include <QTcpSocket>
 #include <QUdpSocket>
 #include <QDebug>
+#include <QTimer>
 
 enum class DATA_TYPE {
     UINT8  = 0x01,
@@ -27,17 +28,20 @@ class DataHandler : public QObject {
 public:
     void init(QString serverIP, quint16 serverTCPPort, quint16 serverUDPPort, quint16 clientTCPPort, quint16 clientUDPPort);
     int connectToServer(QString name);
-    int sendHeartbeat();
+    int startHeartbeat();
+    int startDataStream();
     const QJsonArray& getDataFormat();
-    const QByteArray& getData();
+    const QMap<int, QByteArray>& getData();
 
 signals:
-    void dataReceived(const quint8& data);
-    void dataFormatReceived(const QJsonArray& dataFormat);
+    void heartbeatFail();
+    void updReceived(const QList<int>& data);
+    void receiveRateUpdate(int rate);
 
 private slots:
     void tcpReady();
     void udpReady();
+    void heartbeat();
 
 private:
     QTcpSocket tcpSocket;
@@ -48,8 +52,11 @@ private:
     quint16 serverUDPPort;
     quint16 clientTCPPort;
     quint16 clientUDPPort;
+    QTimer heartbeatTimer;
     QJsonArray dataFormat;
-    QByteArray data;
+    QList<int> idUpdateList;
+    QMap<int, QByteArray> buffer;
+    int receiveCount = 0;
 
     QJsonObject decodeDataFormat(const QString& frame);
 };

@@ -49,6 +49,8 @@ void Connection::connectToServer() {
         case 0:
             ui->connect->setText("Connected");
             QMessageBox::information(this, tr("Connected"), tr("Connected to server"), QMessageBox::Yes);
+            dataHandler.startDataStream();
+            dataHandler.startHeartbeat();
             this->close();
             emit showDashboard();
             return;
