@@ -127,31 +127,31 @@ void ClientHandler::sendAllUDP(uint8_t *message, int length)
 		client->sendUDP(message, length);
 }
 
-bool ClientHandler::parseTCP(WiFiClient& client, string message)
+bool ClientHandler::parseTCP(WiFiClient &client, string message)
 {
 	int ind = message.find_first_of(":");
-	if(ind == -1)
+	if (ind == -1)
 		return false;
 	switch (message[0])
 	{
 	case 'N':
-		for(auto msgHead : tx.getMessageList())
+		for (auto msgHead : tx.getMessageList())
 			client.write(msgHead->generateRegisterMsg().c_str());
-		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) != nullptr)
+		if (getClient(client.remoteIP().toString().c_str(), UDP_PORT) != nullptr)
 			return false;
-		if(getClient(message.substr(ind+1, message.length()-ind-1)) != nullptr)
+		if (getClient(message.substr(ind + 1, message.length() - ind - 1)) != nullptr)
 			return false;
-		addClient(client.remoteIP().toString().c_str(), UDP_PORT, message.substr(ind+1, message.length()-ind-1), udpPort++);
+		addClient(client.remoteIP().toString().c_str(), UDP_PORT, message.substr(ind + 1, message.length() - ind - 1), udpPort++);
 		break;
 	case 'H':
-		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
+		if (getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
 			return false;
 		getClient(client.remoteIP().toString().c_str(), UDP_PORT)->heartbeat();
 		break;
 	case 'R':
-		if(getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
+		if (getClient(client.remoteIP().toString().c_str(), UDP_PORT) == nullptr)
 			return false;
-		for(auto msgHead : tx.getMessageList())
+		for (auto msgHead : tx.getMessageList())
 			client.write(msgHead->generateRegisterMsg().c_str());
 		break;
 
@@ -160,4 +160,34 @@ bool ClientHandler::parseTCP(WiFiClient& client, string message)
 	}
 
 	return true;
+}
+
+void scanWiFi()
+{
+	while (true)
+	{
+		int n = WiFi.scanNetworks();
+		Serial.println("scan done");
+		if (n == 0)
+		{
+			Serial.println("no networks found");
+		}
+		else
+		{
+			Serial.print(n);
+			Serial.println(" networks found");
+			for (int i = 0; i < n; ++i)
+			{
+				// Print SSID and RSSI for each network found
+				Serial.print(i + 1);
+				Serial.print(": ");
+				Serial.print(WiFi.SSID(i));
+				Serial.print(" (");
+				Serial.print(WiFi.RSSI(i));
+				Serial.println(")");
+				// Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+				delay(10);
+			}
+		}
+	}
 }

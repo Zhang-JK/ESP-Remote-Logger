@@ -1,8 +1,8 @@
 #ifndef PASSWORD_H
 #define PASSWORD_H
 
-#define SSID        "eduroam"
-#define USER_NAME   "jzhanger@connect.ust.hk"
-#define PASSWORD    "qaz45922622qazkk"
+#define SSID_DEFAULT        "eduroam"
+#define USER_NAME_DEFAULT   "jzhanger@connect.ust.hk"
+#define PASSWORD_DEFAULT    "qaz45922622qazkk"
 
 #endif

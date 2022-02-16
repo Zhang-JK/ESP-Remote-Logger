@@ -60,4 +60,6 @@ class ClientHandler
 	bool parseTCP(WiFiClient& client, string message);
 };
 
+void scanWiFi();
+
 #endif

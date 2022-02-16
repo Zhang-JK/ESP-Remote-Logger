@@ -56,7 +56,7 @@ void setup()
   }
 
   // start network
-  String ssid = SSID, username = USER_NAME, password = PASSWORD;
+  String ssid = SSID_DEFAULT, username = USER_NAME_DEFAULT, password = PASSWORD_DEFAULT;
   bool networkType = 0;
   if (cardState)
   {
@@ -171,7 +171,7 @@ void loop()
         tcpBuffer += c;
     }
     tcpConnected = client.connected();
-  } 
+  }
   else
   {
     client = server.available();
@@ -210,7 +210,7 @@ void loop()
   usartReceive(infoSerial);
 
   // send UDP test data, about 300Hz
-  if(millis() - lastTransmitTick > 1)
+  if (millis() - lastTransmitTick > 1)
   {
     tx.txTransmitViaNet(clientHandler);
     lastTransmitTick = millis();
