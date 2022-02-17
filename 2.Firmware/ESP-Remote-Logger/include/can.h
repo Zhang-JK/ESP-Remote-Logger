@@ -16,6 +16,7 @@ class CAN
     CAN_frame_t tx_frame;
 
     uint8_t rxData[CAN_MESSAGE_LENGTH];
+    // uint8_t *rxData;
     uint8_t txData[CAN_MESSAGE_LENGTH];
     int rxID;
     int txID;

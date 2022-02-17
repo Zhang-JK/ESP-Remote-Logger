@@ -44,7 +44,7 @@
 #include "CAN_config.h"
 
 // CAN Filter - no acceptance filter
-static CAN_filter_t __filter = { Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff };
+static CAN_filter_t __filter = { Dual_Mode, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0Xf0 };
 
 static void CAN_read_frame_phy();
 static void CAN_isr(void *arg_p);
@@ -122,7 +122,7 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 	}
 
 	// send frame to input queue
-	xQueueSendToBackFromISR(CAN_cfg.rx_queue, &__frame, higherPriorityTaskWoken);
+	xQueueOverwriteFromISR(CAN_cfg.rx_queue, &__frame, higherPriorityTaskWoken);
 
 	// Let the hardware know the frame has been read.
 	MODULE_CAN->CMR.B.RRB = 1;
@@ -223,7 +223,7 @@ int CAN_init() {
 	 * 1 -> triple; the bus is sampled three times; recommended for low/medium speed buses     (class A and B) where
 	 * filtering spikes on the bus line is beneficial 0 -> single; the bus is sampled once; recommended for high speed
 	 * buses (SAE class C)*/
-	MODULE_CAN->BTR1.B.SAM = 0x1;
+	MODULE_CAN->BTR1.B.SAM = 0x0;
 
 	// enable all interrupts
 	MODULE_CAN->IER.U = 0xff;
@@ -258,6 +258,7 @@ int CAN_init() {
 
 	// Showtime. Release Reset Mode.
 	MODULE_CAN->MOD.B.RM = 0;
+	MODULE_CAN->MOD.B.LOM = 0x1;
 
 	return 0;
 }

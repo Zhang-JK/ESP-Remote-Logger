@@ -11,10 +11,10 @@ void CAN::init(CAN_speed_t speed, gpio_num_t rx, gpio_num_t tx) {
 }
 
 bool CAN::receive(int timeout) {
-    if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, timeout * portTICK_PERIOD_MS) != pdTRUE)
-        return false;
+    if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, timeout * portTICK_PERIOD_MS) == pdTRUE);
     rxID = rx_frame.MsgID;
     memcpy(rxData, rx_frame.data.u8, CAN_MESSAGE_LENGTH);
+    // rxData = rx_frame.data.u8;
     return true;
 }
 

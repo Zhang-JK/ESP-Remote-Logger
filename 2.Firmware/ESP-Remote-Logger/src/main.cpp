@@ -6,6 +6,7 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <sd_card.h>
+#include <CAN.h>
 
 #include <sstream>
 using namespace std;
@@ -20,8 +21,9 @@ WiFiClient client;
 uint32_t lastTransmitTick = 0;
 char wifiFile[] = "/wifi.txt";
 
-CAN can;
+// CAN can;
 int canMessageCount = 0;
+list<int> canReceiveIDs;
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -30,8 +32,10 @@ SdCard tf;
 
 HardwareSerial infoSerial(1);
 hw_timer_t *timer = nullptr;
+hw_timer_t *timerCAN = nullptr;
 
 void screenUpdate();
+void canReceiveList();
 
 void setup()
 {
@@ -87,7 +91,8 @@ void setup()
   server.begin(TCP_SERVER_PORT);
 
   // init CAN receive
-  can.init(CAN_SPEED_1000KBPS, GPIO_NUM_32, GPIO_NUM_33);
+  // can.init(CAN_SPEED_1000KBPS, GPIO_NUM_32, GPIO_NUM_33);
+
 
   // init uart receive
   infoSerial.begin(460800, SERIAL_8E1, 22, 21);
@@ -112,6 +117,11 @@ void setup()
   timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);
 
+  timerCAN = timerBegin(1, 80, true);
+  timerAttachInterrupt(timerCAN, canReceiveList, true);
+  timerAlarmWrite(timerCAN, 4000, true);
+  timerAlarmEnable(timerCAN);
+
   // register messages
   stringstream ss;
   ss << (char)UINT16 << "-"
@@ -133,6 +143,11 @@ void setup()
     tx.registerMsg(i, 0x04, 0x07, name, ss.str().c_str());
     infoSerial.print(tx.getMessageByID(i)->generateRegisterMsg().c_str());
   }
+}
+
+void canReceiveList()
+{
+  canReceiveIDs.clear();
 }
 
 void screenUpdate()
@@ -179,23 +194,27 @@ void loop()
   }
 
   // read motor data
-  if (can.receive(1))
+  while (can.receive(1))
   {
     int canId = can.getRxID();
-    if (canId >= 0x201 && canId <= 0x208)
-    {
-      canMessageCount++;
-      uint8_t data[7];
-      // big endian to little endian
-      data[0] = can.getRxData()[1];
-      data[1] = can.getRxData()[0];
-      data[2] = can.getRxData()[3];
-      data[3] = can.getRxData()[2];
-      data[4] = can.getRxData()[5];
-      data[5] = can.getRxData()[4];
-      data[6] = can.getRxData()[6];
-      tx.txLoadMessage(canId - 0x200, data);
-    }
+    Serial.printf("Received CAN ID: %d\n", canId);
+    if (find(canReceiveIDs.begin(), canReceiveIDs.end(), canId) == canReceiveIDs.end())
+      if (canId >= 0x201 && canId <= 0x208)
+      {
+        canMessageCount++;
+        canReceiveIDs.push_back(canId);
+        uint8_t* canData = can.getRxData();
+        uint8_t data[7];
+        // big endian to little endian
+        data[0] = canData[1];
+        data[1] = canData[0];
+        data[2] = canData[3];
+        data[3] = canData[2];
+        data[4] = canData[5];
+        data[5] = canData[4];
+        data[6] = canData[6];
+        tx.txLoadMessage(canId - 0x200, data);
+      }
     // Serial.printf("%s is running at %d RPM \n", (tx.getMessageByID(canId-0x200)->name).c_str(), *(int16_t *)(tx.getMessageByID(canId-0x200)->getData("RPM")->value));
     tx.txTransmit((uint8_t)(canId - 0x200), infoSerial);
   }
