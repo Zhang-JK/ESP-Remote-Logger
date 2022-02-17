@@ -122,7 +122,7 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 	}
 
 	// send frame to input queue
-	xQueueOverwriteFromISR(CAN_cfg.rx_queue, &__frame, higherPriorityTaskWoken);
+	xQueueSendToFrontFromISR(CAN_cfg.rx_queue, &__frame, higherPriorityTaskWoken);
 
 	// Let the hardware know the frame has been read.
 	MODULE_CAN->CMR.B.RRB = 1;
@@ -256,8 +256,8 @@ int CAN_init() {
 	// allocate the tx complete semaphore
 	sem_tx_complete = xSemaphoreCreateBinary();
 
-	// Showtime. Release Reset Mode.
-	MODULE_CAN->MOD.B.RM = 0;
+	// call start to start receive
+	MODULE_CAN->MOD.B.RM = 1;
 	MODULE_CAN->MOD.B.LOM = 0x1;
 
 	return 0;
@@ -280,6 +280,18 @@ int CAN_write_frame(const CAN_frame_t *p_frame) {
 int CAN_stop() {
 	// enter reset mode
 	MODULE_CAN->MOD.B.RM = 1;
+
+	return 0;
+}
+
+int CAN_start() {
+	MODULE_CAN->MOD.B.LOM = 1;
+	MODULE_CAN->CMR.B.CDO = 1;
+	while(MODULE_CAN->SR.B.RBS == 1)
+		MODULE_CAN->CMR.B.RRB = 1;
+
+	// exit reset mode
+	MODULE_CAN->MOD.B.RM = 0;
 
 	return 0;
 }

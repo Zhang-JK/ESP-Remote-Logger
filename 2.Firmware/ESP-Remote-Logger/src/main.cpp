@@ -21,8 +21,9 @@ WiFiClient client;
 uint32_t lastTransmitTick = 0;
 char wifiFile[] = "/wifi.txt";
 
-// CAN can;
+CAN can;
 int canMessageCount = 0;
+uint32_t lastCANRx = 0;
 list<int> canReceiveIDs;
 
 TFT_eSPI tft = TFT_eSPI();
@@ -32,7 +33,6 @@ SdCard tf;
 
 HardwareSerial infoSerial(1);
 hw_timer_t *timer = nullptr;
-hw_timer_t *timerCAN = nullptr;
 
 void screenUpdate();
 void canReceiveList();
@@ -91,11 +91,11 @@ void setup()
   server.begin(TCP_SERVER_PORT);
 
   // init CAN receive
-  // can.init(CAN_SPEED_1000KBPS, GPIO_NUM_32, GPIO_NUM_33);
-
+  can.init(CAN_SPEED_1000KBPS, GPIO_NUM_32, GPIO_NUM_33);
 
   // init uart receive
   infoSerial.begin(460800, SERIAL_8E1, 22, 21);
+  can.start();
 
   // show ip adddress
   tft.fillScreen(TFT_BLACK);
@@ -117,11 +117,6 @@ void setup()
   timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);
 
-  timerCAN = timerBegin(1, 80, true);
-  timerAttachInterrupt(timerCAN, canReceiveList, true);
-  timerAlarmWrite(timerCAN, 4000, true);
-  timerAlarmEnable(timerCAN);
-
   // register messages
   stringstream ss;
   ss << (char)UINT16 << "-"
@@ -135,7 +130,6 @@ void setup()
      << ",";
   ss << (char)UINT8 << "-"
      << "Temp";
-  // Serial.println(ss.str().c_str());
   char name[10];
   for (int i = 1; i <= 8; i++)
   {
@@ -143,11 +137,6 @@ void setup()
     tx.registerMsg(i, 0x04, 0x07, name, ss.str().c_str());
     infoSerial.print(tx.getMessageByID(i)->generateRegisterMsg().c_str());
   }
-}
-
-void canReceiveList()
-{
-  canReceiveIDs.clear();
 }
 
 void screenUpdate()
@@ -194,16 +183,16 @@ void loop()
   }
 
   // read motor data
-  while (can.receive(1))
+  if (can.state && can.receive())
   {
     int canId = can.getRxID();
-    Serial.printf("Received CAN ID: %d\n", canId);
     if (find(canReceiveIDs.begin(), canReceiveIDs.end(), canId) == canReceiveIDs.end())
+    {
       if (canId >= 0x201 && canId <= 0x208)
       {
         canMessageCount++;
         canReceiveIDs.push_back(canId);
-        uint8_t* canData = can.getRxData();
+        uint8_t *canData = can.getRxData();
         uint8_t data[7];
         // big endian to little endian
         data[0] = canData[1];
@@ -214,9 +203,23 @@ void loop()
         data[5] = canData[4];
         data[6] = canData[6];
         tx.txLoadMessage(canId - 0x200, data);
+        // tx.txTransmit((uint8_t)(canId - 0x200), infoSerial);
       }
-    // Serial.printf("%s is running at %d RPM \n", (tx.getMessageByID(canId-0x200)->name).c_str(), *(int16_t *)(tx.getMessageByID(canId-0x200)->getData("RPM")->value));
-    tx.txTransmit((uint8_t)(canId - 0x200), infoSerial);
+    }
+  }
+
+  if (millis() - lastCANRx > 1)
+  {
+    if (can.state)
+    {
+      // Serial.printf("CAN RX: %d\n", canReceiveIDs.size());
+      canReceiveIDs.clear();
+    }
+    if (can.state)
+      can.stop();
+    else
+      can.start();
+    lastCANRx = millis();
   }
 
   // send motor data
@@ -229,9 +232,8 @@ void loop()
   usartReceive(infoSerial);
 
   // send UDP test data, about 300Hz
-  if (millis() - lastTransmitTick > 1)
+  if (!can.state)
   {
     tx.txTransmitViaNet(clientHandler);
-    lastTransmitTick = millis();
   }
 }

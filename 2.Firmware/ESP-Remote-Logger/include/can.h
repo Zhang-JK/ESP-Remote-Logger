@@ -22,13 +22,17 @@ class CAN
     int txID;
 
    public:
+    bool state = false;
+
     uint8_t *getRxData() { return rxData; }
     void setTxData(uint8_t *data) { memcpy(txData, data, CAN_MESSAGE_LENGTH); }
     int getRxID() { return rxID; }
     void setTxID(int id) { txID = id; }
     
     void init(CAN_speed_t speed, gpio_num_t rx, gpio_num_t tx);
-    bool receive(int timeout);
+    void start();
+    void stop();
+    bool receive();
     bool transmit();
 };
 

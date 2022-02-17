@@ -12,6 +12,10 @@ int ESP32CAN::CANStop()
 {
     return CAN_stop();
 }
+int ESP32CAN::CANStart()
+{
+    return CAN_start();
+}
 int ESP32CAN::CANConfigFilter(const CAN_filter_t* p_filter)
 {
     return CAN_config_filter(p_filter);

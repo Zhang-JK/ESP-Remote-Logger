@@ -115,6 +115,8 @@ int CAN_write_frame(const CAN_frame_t *p_frame);
  */
 int CAN_stop(void);
 
+int CAN_start(void);
+
 /**
  * \brief Config CAN Filter, must call before CANInit()
  *
