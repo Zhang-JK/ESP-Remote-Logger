@@ -32,9 +32,11 @@ public:
     int startDataStream();
     const QJsonArray& getDataFormat();
     const QMap<int, QByteArray>& getData();
+    const QByteArray& getData(int id);
 
 signals:
     void heartbeatFail();
+    void tcpUpdate(QJsonArray *);
     void updReceived(const QList<int>& data);
     void receiveRateUpdate(int rate);
 
@@ -59,6 +61,7 @@ private:
     int receiveCount = 0;
 
     QJsonObject decodeDataFormat(const QString& frame);
+    const QJsonValueRef *findInDataFormat(int id);
 };
 
 extern DataHandler dataHandler;

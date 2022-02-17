@@ -24,12 +24,16 @@ public:
 
 private slots:
     void fullScreen();
+    void updateTCPData(QJsonArray*);
     void udpDecode(const QList<int>& data);
     void receiveRate(int updated);
+//    void disconnected();
 
 private:
     Ui::Dashboard *ui;
     QStandardItemModel *model;
+    QMap<int, QStandardItem*> dataItems;
+    QMap<QStandardItem*, QList<QStandardItem*>> dataChildItems;
 };
 
 

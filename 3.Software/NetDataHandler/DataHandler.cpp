@@ -60,19 +60,24 @@ const QMap<int, QByteArray> &DataHandler::getData() {
     return buffer;
 }
 
+const QByteArray &DataHandler::getData(int id) {
+    return buffer[id];
+}
+
 void DataHandler::tcpReady() {
     QByteArray data = tcpSocket.readAll();
-    qDebug() << "TCP Data: " << data;
 
     char splitter = 0xAF;
     QList<QByteArray> list = data.split(splitter);
     for (const QByteArray& str : list) {
         if(str.length() == 0) continue;
         if(str[0] != (char)0xA2) continue;
+        if(findInDataFormat(str[1]) != nullptr) continue;
         dataFormat.append(decodeDataFormat(str));
     }
 
     qDebug() << "Data format: " << dataFormat << endl;
+    emit tcpUpdate(&dataFormat);
 }
 
 void DataHandler::udpReady() {
@@ -91,13 +96,6 @@ void DataHandler::udpReady() {
         if (!idUpdateList.contains(str[1])) idUpdateList.append(str[1]);
     }
 
-    for (int i=0; i<dataFormat.count(); i++) {
-        if(!idUpdateList.contains(dataFormat[i].toObject()["id"].toInt())) continue;
-//        QJsonValueRef ref = dataFormat[i].toObject().find("timestamp").value();
-//        if (ref.isUndefined()) continue;
-//        ref = QDateTime::currentDateTime().toString("mm:ss");
-        dataFormat[i].toObject().find("timestamp").value() = QDateTime::currentDateTime().toString("mm:ss");
-    }
     receiveCount++;
     emit updReceived(idUpdateList);
 }
@@ -125,7 +123,6 @@ QJsonObject DataHandler::decodeDataFormat(const QString &frame) {
     obj.insert("length", frame[2].toLatin1());
     obj.insert("size", frame[3].toLatin1());
     obj.insert("name", frame.mid(4, frame.indexOf('\;') - 4));
-    obj.insert("timestamp", QDateTime::currentDateTime().toString("mm:ss"));
     buffer.insert(obj["id"].toInt(), QByteArray());
 
     QJsonArray array;
@@ -150,6 +147,14 @@ QJsonObject DataHandler::decodeDataFormat(const QString &frame) {
 
     obj.insert("field", array);
     return obj;
+}
+
+const QJsonValueRef *DataHandler::findInDataFormat(int id) {
+    for(const QJsonValueRef &ref : dataFormat) {
+        if(!ref.toObject().find("id")->isUndefined() && ref.toObject()["id"].toInt() == id)
+            return &ref;
+    }
+    return nullptr;
 }
 
 DataHandler dataHandler;
