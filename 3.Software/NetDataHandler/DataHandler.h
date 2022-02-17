@@ -33,6 +33,7 @@ public:
     const QJsonArray& getDataFormat();
     const QMap<int, QByteArray>& getData();
     const QByteArray& getData(int id);
+    const QJsonValueRef *findInDataFormat(int id);
 
 signals:
     void heartbeatFail();
@@ -61,7 +62,6 @@ private:
     int receiveCount = 0;
 
     QJsonObject decodeDataFormat(const QString& frame);
-    const QJsonValueRef *findInDataFormat(int id);
 };
 
 extern DataHandler dataHandler;

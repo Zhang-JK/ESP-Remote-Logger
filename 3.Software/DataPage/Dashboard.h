@@ -33,7 +33,7 @@ private:
     Ui::Dashboard *ui;
     QStandardItemModel *model;
     QMap<int, QStandardItem*> dataItems;
-    QMap<QStandardItem*, QList<QStandardItem*>> dataChildItems;
+    QMap<QStandardItem*, QList<QStandardItem*>*> dataChildItems;
 };
 
 

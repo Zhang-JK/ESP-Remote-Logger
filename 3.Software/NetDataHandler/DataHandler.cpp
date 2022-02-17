@@ -60,7 +60,7 @@ const QMap<int, QByteArray> &DataHandler::getData() {
     return buffer;
 }
 
-const QByteArray &DataHandler::getData(int id) {
+const QByteArray& DataHandler::getData(int id) {
     return buffer[id];
 }
 
